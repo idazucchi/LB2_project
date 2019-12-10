@@ -1,12 +1,14 @@
 import numpy as np
 import pickle, argparse
+from scipy.stats import sem
 
 def stat(d,s,t,k):
 	#~ print(d,'>>>><<<',k)
 	#~ print(k)
 	mean = np.nanmean(d[k])
 	s[k].append(mean)
-	err = np.nanstd(d[k])
+	# sem(a, axis=0, ddof=1, nan_policy='propagate')
+	err = sem(d[k], nan_policy='omit')
 	s[k].append(err)
 	t[k] += '& %r $\\pm$ %r '%(round(mean,2),round(err,2))
 
@@ -21,11 +23,11 @@ def print_d(d):
 def average(d,s,t,comm=stat):
 	for k in d.keys():
 		if type(d[k])==dict:
-			print(k)
+			#~ print(k)
 			average(d[k],s[k],t[k],comm)
 			#~ average(d[k],s,t,comm)
 		else:
-			print(k)
+			#~ print(k)
 			comm(d,s,t,k)
 			#~ comm
 
@@ -44,13 +46,16 @@ def stat_elab(stat):
 		stat_index = pickle.load(f)
 	
 	new_Sov = []
+	s = []
 	for i in stat_index['SOV'].keys():
-		print(len(stat_index['SOV'][i]))
+		#~ print(len(stat_index['SOV'][i]))
 		new_Sov.append(np.nanmean(stat_index['SOV'][i]))
+		s += stat_index['SOV'][i]
+	#~ print('>>',np.nanmean(s), np.nanstd(s),sem(s, nan_policy='omit'))
 	#~ print(len(new_Sov['SOV']))
 	stat_index['SOV'] = new_Sov
 	
-	print(stat_index['SOV'],np.nanmean(stat_index['SOV']))
+	#~ print(stat_index['SOV'],np.nanstd(stat_index['SOV']),sem(stat_index['SOV'], nan_policy='omit'))
 	new_ss_sov = {'H':[],'E':[],'-':[]}
 	for ss in new_ss_sov.keys():
 		for i in stat_index['ss_sov'].keys():
@@ -82,14 +87,25 @@ if __name__=='__main__':
 	
 	ida = stat_elab(args.input_file)
 	svmb = stat_elab('blind_svm.py')
+	gor = stat_elab('stat_gor.py')
 	gorb = stat_elab('blind_gor.py')
 	vi = stat_elab('stat_svm_g2_c4.py')
 	msm = stat_elab('stat_svm_g2_c2.py')
 	maria = stat_elab('stat_svm_g05_c2.py')
 	#~ dic_cy(stat_dic,tab)
 	
-	average(svmb,recap,tab)
-	average(gorb,recap,tab)
+	#~ average(svmb,recap,tab)
+	#~ average(gorb,recap,tab)
+	#~ average(gor,recap,tab)
+	#~ average(maria,recap,tab)	
+	#~ average(ida,recap,tab)
+	#~ average(msm,recap,tab)
+	#~ average(vi,recap,tab)
 	
+	average(maria,recap,tab)	
+	average(gor,recap,tab)
+	
+	
+	#~ print('$\gamma$ 0.5  C 4 & $\\gamma$ 0.5 C 2 & $\\gamma$ 2 C 2 & $\\gamma$ 2 C 4 ')
 	print_d(tab)
 	
